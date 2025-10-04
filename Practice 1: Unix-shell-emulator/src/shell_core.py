@@ -1,17 +1,20 @@
 import os
 import re
+from config import Config
 
 
 class ShellCore:
     """Ядро оболочки - содержит всю логику командной строки"""
 
     # Конструктор
-    def __init__(self, vfs):
+    def __init__(self, vfs, config):
         self.vfs = vfs              # сохраняет ссылку на vfs для доступа к файловой системе
+        self.config = config
         self.commands = {           # список команд
             'ls': self.cmd_ls,
             'cd': self.cmd_cd,
-            'exit': self.cmd_exit
+            'exit': self.cmd_exit,
+            'conf-dump': self.cmd_conf_dump
         }
 
     def _expand_env_vars(self, text):
@@ -76,3 +79,15 @@ class ShellCore:
         """Команда exit - завершает программу"""
 
         return "EXIT"
+
+    def cmd_conf_dump(self, args):
+        """Команда conf-dump - выводит текущую конфигурацию эмулятора"""
+
+        config_dict = self.config.get_config_dict()
+
+        result = "КОНФИГУРАЦИЯ ЭМУЛЯТОРА\n"
+        for key, value in config_dict.items():
+            result += f"{key}: {value}\n"
+        result += "-----------------------------"
+
+        return result
