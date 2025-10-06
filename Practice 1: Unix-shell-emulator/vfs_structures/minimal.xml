@@ -1,0 +1,7 @@
+<vfs>
+    <directory name="home">
+        <directory name="user">
+            <file name="readme.txt">Минимальная VFS</file>
+        </directory>
+    </directory>
+</vfs>
