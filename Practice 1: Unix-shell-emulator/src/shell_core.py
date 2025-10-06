@@ -17,6 +17,8 @@ class ShellCore:
             'echo': self.cmd_echo,
             'tac': self.cmd_tac,
             'find': self.cmd_find,
+            'mkdir': self.cmd_mkdir,
+            'touch': self.cmd_touch,
             'wc': self.cmd_wc
         }
 
@@ -190,3 +192,21 @@ class ShellCore:
         char_count = len(content) if content else 0
 
         return f"  {line_count}  {word_count}  {char_count} {filename}"
+
+    def cmd_mkdir(self, args):
+        """Команда mkdir - создание директорий"""
+
+        if not args:
+            return "mkdir: отсутствует аргумент - имя директории"
+
+        success, message = self.vfs.create_directory(args[0])
+        return message if success else f"mkdir: {message}"
+
+    def cmd_touch(self, args):
+        """Команда touch - создание файлов"""
+
+        if not args:
+            return "touch: отсутствует аргумент - имя файла"
+
+        success, message = self.vfs.create_file(args[0])
+        return message if success else f"touch: {message}"
