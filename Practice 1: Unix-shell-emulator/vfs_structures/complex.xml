@@ -2,27 +2,51 @@
     <directory name="home">
         <directory name="user">
             <directory name="documents">
-                <file name="project1.txt">Содержимое проекта 1</file>
-                <file name="project2.txt">Содержимое проекта 2</file>
+                <file name="project1.txt">Проект 1
+Первая строка
+Вторая строка
+Третья строка
+Завершение проекта 1</file>
+                <file name="project2.txt">Начало проекта 2
+Разработка
+Тестирование
+Внедрение
+Конец проекта 2</file>
+                <file name="multi_line.txt">Строка 1
+Строка 2
+Строка 3
+Строка 4
+Последняя строка</file>
             </directory>
             <directory name="downloads">
                 <file name="file1.zip">Архив файла 1</file>
+                <file name="document.pdf">PDF документ</file>
             </directory>
-            <file name=".bashrc"># Конфигурация bash</file>
+            <file name=".bashrc"># Конфигурация bash
+export PATH=$PATH:/usr/local/bin
+alias ll='ls -l'
+# Конец файла</file>
         </directory>
         <directory name="admin">
-            <file name="notes.txt">Заметки администратора</file>
+            <file name="notes.txt">Заметки администратора
+Важная информация
+Настройки системы</file>
         </directory>
     </directory>
     <directory name="etc">
         <directory name="config">
-            <file name="app.conf">config_value=123</file>
+            <file name="app.conf">config_value=123
+debug_mode=true
+max_connections=100</file>
         </directory>
-        <file name="hosts">127.0.0.1 localhost</file>
+        <file name="hosts">127.0.0.1 localhost
+::1 localhost ip6-localhost</file>
     </directory>
     <directory name="var">
         <directory name="log">
-            <file name="system.log">Логи системы</file>
+            <file name="system.log">2024-01-01 INFO: System started
+2024-01-01 WARN: Low disk space
+2024-01-01 INFO: Backup completed</file>
         </directory>
     </directory>
 </vfs>
