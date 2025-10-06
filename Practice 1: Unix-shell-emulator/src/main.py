@@ -11,17 +11,26 @@ def main():
     config = Config()
     config.parse_arguments()
 
+    # Инициализируем VFS
+    vfs = VFS()
+
+    # Загружаем VFS из XML если указан путь
+    if config.vfs_path:
+        try:
+            vfs.load_from_xml(config.vfs_path)
+            print(f"VFS загружена из: {config.vfs_path}")
+        except Exception as e:
+            print(f"Ошибка загрузки VFS: {str(e)}")
+            # Продолжаем с VFS по умолчанию
+
     # Инициализируем компоненты
     root = tk.Tk()
-    vfs = VFS()
     shell_core = ShellCore(vfs, config)
     gui = ShellGUI(root, shell_core, vfs)
 
     # Если указан скрипт - выполняем его
     if config.script_path:
         script_runner = ScriptRunner(shell_core, gui)
-
-        # Запускаем скрипт после небольшой задержки (чтобы GUI успел инициализироваться)
         root.after(100, lambda: script_runner.run_script(config.script_path))
 
     root.mainloop()
