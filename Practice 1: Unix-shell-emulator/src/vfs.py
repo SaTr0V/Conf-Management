@@ -165,3 +165,71 @@ class VFS:
 
         items = list(target_node.children.keys())
         return True, "\n".join(sorted(items))
+
+    def get_file_content(self, path):
+        """Получает содержимое файла по относительному или абсолютному пути"""
+
+        if path.startswith("/"):  # абсолютный путь
+            target_node = self._resolve_path(path)
+        else:
+            # Относительный путь - ищем в текущей директории
+            if self.current_node.children and path in self.current_node.children:
+                target_node = self.current_node.children[path]
+            else:
+                target_node = None
+
+        return target_node
+
+    def find_files(self, search_path, pattern):
+        """Поиск файлов по шаблону"""
+
+        start_node = self._resolve_path(search_path)
+        if not start_node:
+            return None
+
+        if start_node.type != "dir":
+            return None
+
+        results = []
+        self._find_recursive(start_node, pattern, search_path, results)
+        return results
+
+    def _find_recursive(self, node, pattern, current_path, results):
+        """Рекурсивный поиск файлов"""
+
+        if not node.children:
+            return
+
+        for name, child in node.children.items():
+            child_path = f"{current_path}/{name}" if current_path != "/" else f"/{name}"
+
+            # Проверяем соответствие шаблону
+            if self._matches_pattern(name, pattern):
+                results.append(child_path)
+
+            # Рекурсивно ищем в поддиректориях
+            if child.type == "dir":
+                self._find_recursive(child, pattern, child_path, results)
+
+    def _matches_pattern(self, filename, pattern):
+        """Проверяет соответствие имени файла шаблону"""
+
+        # Простая реализация подстановки * в начале/конце
+        if pattern.startswith('*') and pattern.endswith('*'):
+            # *text* - содержит текст
+            search_text = pattern[1:-1]
+            return search_text in filename
+
+        elif pattern.startswith('*'):
+            # *text - заканчивается на текст
+            search_text = pattern[1:]
+            return filename.endswith(search_text)
+
+        elif pattern.endswith('*'):
+            # text* - начинается с текста
+            search_text = pattern[:-1]
+            return filename.startswith(search_text)
+
+        else:
+            # полное совпадение
+            return filename == pattern
