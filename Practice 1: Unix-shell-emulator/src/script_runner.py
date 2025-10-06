@@ -45,6 +45,8 @@ class ScriptRunner:
                 if result and result != "EXIT":
                     self.gui.print_output(f"{result}\n")
 
+                self.gui.update_prompt()
+
                 # Если команда exit - прерываем выполнение скрипта
                 if result == "EXIT":
                     self.gui.print_output("Завершение работы по команде exit\n")
