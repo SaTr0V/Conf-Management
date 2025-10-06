@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import scrolledtext, Entry, Frame
-from config import Config
 
 
 class ShellGUI:
@@ -90,7 +89,7 @@ class ShellGUI:
 
         welcome_msg = f"""
 Добро пожаловать в эмулятор командной строки {self.vfs.name}!
-Доступные команды: ls, cd, exit, conf-dump
+Доступные команды: ls, cd, exit, conf-dump, echo
 Для выхода введите 'exit'
 
 Введенные параметры запуска: {self.shell.config.get_startup_parameters()}
