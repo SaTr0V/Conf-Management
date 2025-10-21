@@ -89,3 +89,113 @@ python dependency_visualizer.py -p A -v 1.0 -r test_repo.txt --test-mode
    python dependency_visualizer.py -p A -v 1.0 -r https://repo.maven.apache.org/maven2 -d 0
    # Ошибка: максимальная глубина должна быть не меньше 1
    ```
+
+### Требования
+
+- Python 3.6 или выше
+- Стандартная библиотека Python (внешние зависимости не требуются)
+
+---
+
+## Этап 2: Сбор данных ✓
+
+Реализован сбор информации о зависимостях из Maven репозитория и тестового репозитория.
+
+### Возможности
+
+- Получение информации о зависимостях из реального Maven репозитория через HTTP
+- Парсинг Maven POM файлов (XML) для извлечения зависимостей
+- Работа с тестовым репозиторием (текстовый формат)
+- Вывод прямых зависимостей для заданного пакета
+- Фильтрация test и optional зависимостей
+
+### Формат тестового репозитория
+
+Тестовый репозиторий представляет собой текстовый файл в формате:
+```
+# Комментарий
+PACKAGE:VERSION -> DEPENDENCY1, DEPENDENCY2, ...
+```
+
+Пример (`test_repo.txt`):
+```
+A:1.0 -> B, C
+B:1.0 -> D
+C:1.0 -> D, E
+D:1.0 ->
+E:1.0 -> F
+F:1.0 ->
+```
+
+### Примеры использования
+
+#### Тестовый репозиторий
+```bash
+# Пакет A с двумя зависимостями
+python dependency_visualizer.py -p A -v 1.0 -r test_repo.txt --test-mode
+
+# Пакет B с одной зависимостью
+python dependency_visualizer.py -p B -v 1.0 -r test_repo.txt --test-mode
+
+# Пакет D без зависимостей
+python dependency_visualizer.py -p D -v 1.0 -r test_repo.txt --test-mode
+```
+
+#### Реальный Maven репозиторий
+```bash
+# JUnit 4.13.2 (одна зависимость)
+python dependency_visualizer.py -p junit:junit -v 4.13.2 -r https://repo.maven.apache.org/maven2
+
+# Google Guava (пакет с множеством зависимостей)
+python dependency_visualizer.py -p com.google.guava:guava -v 31.0-jre -r https://repo.maven.apache.org/maven2
+
+# Apache Commons Lang (без зависимостей)
+python dependency_visualizer.py -p org.apache.commons:commons-lang3 -v 3.12.0 -r https://repo.maven.apache.org/maven2
+```
+
+### Вывод программы
+
+Программа выводит:
+1. Конфигурацию параметров
+2. Список всех прямых зависимостей
+3. Общее количество зависимостей
+
+Пример вывода для JUnit:
+```
+============================================================
+Прямые зависимости для junit:junit:4.13.2
+============================================================
+1. org.hamcrest:hamcrest-core
+
+Всего зависимостей: 1
+```
+
+Пример вывода для Google Guava:
+```
+============================================================
+Прямые зависимости для com.google.guava:guava:31.0-jre
+============================================================
+1. com.google.guava:failureaccess
+2. com.google.guava:listenablefuture
+3. com.google.code.findbugs:jsr305
+4. org.checkerframework:checker-qual
+5. com.google.errorprone:error_prone_annotations
+6. com.google.j2objc:j2objc-annotations
+
+Всего зависимостей: 6
+```
+
+### Технические детали
+
+- **Без использования готовых библиотек**: Используются только стандартные библиотеки Python
+- **HTTP запросы**: `urllib.request` для загрузки POM файлов
+- **XML парсинг**: `xml.etree.ElementTree` для разбора Maven POM файлов
+- **Поддержка Maven namespace**: Корректная обработка XML с namespace `http://maven.apache.org/POM/4.0.0`
+- **Обработка ошибок**: Понятные сообщения при проблемах с сетью или некорректных данных
+- **Фильтрация зависимостей**: Исключаются зависимости со scope=test и optional=true
+
+---
+
+## Лицензия
+
+Учебный проект

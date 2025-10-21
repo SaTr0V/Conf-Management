@@ -7,6 +7,199 @@ import argparse
 import sys
 import os
 from pathlib import Path
+import urllib.request
+import urllib.error
+import xml.etree.ElementTree as ET
+
+
+class TestRepository:
+    """Класс для работы с тестовым репозиторием."""
+    
+    def __init__(self, repo_file):
+        """
+        Инициализация тестового репозитория.
+        
+        Args:
+            repo_file: Путь к файлу репозитория
+        """
+        self.repo_file = repo_file
+        self.dependencies = {}
+        self._load_repository()
+    
+    def _load_repository(self):
+        """Загрузить репозиторий из файла."""
+        try:
+            with open(self.repo_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    # Пропускаем пустые строки и комментарии
+                    if not line or line.startswith('#'):
+                        continue
+                    
+                    # Формат: PACKAGE:VERSION -> DEP1, DEP2, ...
+                    if '->' in line:
+                        parts = line.split('->')
+                        package_info = parts[0].strip()
+                        deps_str = parts[1].strip() if len(parts) > 1 else ""
+                        
+                        # Парсим имя пакета и версию
+                        if ':' in package_info:
+                            package, version = package_info.split(':', 1)
+                            package = package.strip()
+                            version = version.strip()
+                        else:
+                            package = package_info
+                            version = "1.0"
+                        
+                        # Парсим зависимости
+                        deps = []
+                        if deps_str:
+                            for dep in deps_str.split(','):
+                                dep = dep.strip()
+                                if dep:
+                                    deps.append(dep)
+                        
+                        # Сохраняем в словарь
+                        key = f"{package}:{version}"
+                        self.dependencies[key] = deps
+                        
+        except Exception as e:
+            raise ValueError(f"Ошибка при чтении тестового репозитория: {e}")
+    
+    def get_dependencies(self, package, version):
+        """
+        Получить зависимости для пакета.
+        
+        Args:
+            package: Имя пакета
+            version: Версия пакета
+            
+        Returns:
+            Список зависимостей
+        """
+        key = f"{package}:{version}"
+        return self.dependencies.get(key, [])
+
+
+class MavenRepository:
+    """Класс для работы с Maven репозиторием."""
+    
+    def __init__(self, repository_url):
+        """
+        Инициализация Maven репозитория.
+        
+        Args:
+            repository_url: URL репозитория
+        """
+        self.repository_url = repository_url.rstrip('/')
+    
+    def _build_pom_url(self, group_id, artifact_id, version):
+        """
+        Построить URL к POM файлу.
+        
+        Args:
+            group_id: Group ID пакета
+            artifact_id: Artifact ID пакета
+            version: Версия пакета
+            
+        Returns:
+            URL к POM файлу
+        """
+        group_path = group_id.replace('.', '/')
+        pom_url = f"{self.repository_url}/{group_path}/{artifact_id}/{version}/{artifact_id}-{version}.pom"
+        return pom_url
+    
+    def _download_pom(self, url):
+        """
+        Скачать POM файл.
+        
+        Args:
+            url: URL POM файла
+            
+        Returns:
+            Содержимое POM файла
+        """
+        try:
+            with urllib.request.urlopen(url, timeout=10) as response:
+                return response.read().decode('utf-8')
+        except urllib.error.HTTPError as e:
+            raise ValueError(f"Не удалось загрузить POM файл (HTTP {e.code}): {url}")
+        except urllib.error.URLError as e:
+            raise ValueError(f"Ошибка соединения: {e.reason}")
+        except Exception as e:
+            raise ValueError(f"Ошибка при загрузке POM файла: {e}")
+    
+    def _parse_pom(self, pom_content):
+        """
+        Парсинг POM файла для извлечения зависимостей.
+        
+        Args:
+            pom_content: Содержимое POM файла
+            
+        Returns:
+            Список зависимостей в формате (groupId, artifactId, version)
+        """
+        try:
+            root = ET.fromstring(pom_content)
+            
+            # Maven использует namespace
+            namespace = {'m': 'http://maven.apache.org/POM/4.0.0'}
+            
+            # Ищем секцию dependencies
+            dependencies = []
+            deps_element = root.find('.//m:dependencies', namespace)
+            
+            if deps_element is not None:
+                for dep in deps_element.findall('m:dependency', namespace):
+                    group_id = dep.find('m:groupId', namespace)
+                    artifact_id = dep.find('m:artifactId', namespace)
+                    version = dep.find('m:version', namespace)
+                    scope = dep.find('m:scope', namespace)
+                    optional = dep.find('m:optional', namespace)
+                    
+                    # Пропускаем test и optional зависимости
+                    if scope is not None and scope.text == 'test':
+                        continue
+                    if optional is not None and optional.text == 'true':
+                        continue
+                    
+                    if group_id is not None and artifact_id is not None:
+                        ver = version.text if version is not None else 'LATEST'
+                        dependencies.append((group_id.text, artifact_id.text, ver))
+            
+            return dependencies
+            
+        except ET.ParseError as e:
+            raise ValueError(f"Ошибка при парсинге POM файла: {e}")
+    
+    def get_dependencies(self, package, version):
+        """
+        Получить зависимости для Maven пакета.
+        
+        Args:
+            package: Имя пакета в формате groupId:artifactId
+            version: Версия пакета
+            
+        Returns:
+            Список зависимостей в формате groupId:artifactId
+        """
+        # Парсим имя пакета
+        if ':' not in package:
+            raise ValueError(f"Неверный формат Maven пакета: {package}. Ожидается groupId:artifactId")
+        
+        group_id, artifact_id = package.split(':', 1)
+        
+        # Строим URL и скачиваем POM
+        pom_url = self._build_pom_url(group_id, artifact_id, version)
+        pom_content = self._download_pom(pom_url)
+        
+        # Парсим зависимости
+        raw_deps = self._parse_pom(pom_content)
+        
+        # Преобразуем в формат groupId:artifactId
+        dependencies = [f"{g}:{a}" for g, a, v in raw_deps]
+        
+        return dependencies
 
 
 class DependencyVisualizer:
@@ -26,6 +219,12 @@ class DependencyVisualizer:
         self.output_file = args.output
         self.max_depth = args.max_depth
         
+        # Инициализация репозитория
+        if self.test_mode:
+            self.repository = TestRepository(self.repository_url)
+        else:
+            self.repository = MavenRepository(self.repository_url)
+        
     def display_config(self):
         """Вывести конфигурацию в формате ключ-значение."""
         print("=" * 60)
@@ -38,6 +237,39 @@ class DependencyVisualizer:
         print(f"Файл вывода: {self.output_file}")
         print(f"Максимальная глубина: {self.max_depth}")
         print("=" * 60)
+    
+    def get_direct_dependencies(self):
+        """
+        Получить прямые зависимости пакета.
+        
+        Returns:
+            Список прямых зависимостей
+        """
+        try:
+            dependencies = self.repository.get_dependencies(self.package_name, self.version)
+            return dependencies
+        except Exception as e:
+            raise ValueError(f"Ошибка при получении зависимостей: {e}")
+    
+    def display_direct_dependencies(self):
+        """Вывести прямые зависимости на экран (для этапа 2)."""
+        print("\n" + "=" * 60)
+        print(f"Прямые зависимости для {self.package_name}:{self.version}")
+        print("=" * 60)
+        
+        try:
+            dependencies = self.get_direct_dependencies()
+            
+            if dependencies:
+                for i, dep in enumerate(dependencies, 1):
+                    print(f"{i}. {dep}")
+                print(f"\nВсего зависимостей: {len(dependencies)}")
+            else:
+                print("Зависимости отсутствуют")
+                
+        except Exception as e:
+            print(f"Ошибка: {e}", file=sys.stderr)
+            raise
         
 
 def validate_package_name(package_name):
@@ -232,10 +464,13 @@ def main():
         # Создание экземпляра визуализатора
         visualizer = DependencyVisualizer(args)
         
-        # Вывод конфигурации (для этапа 1)
+        # Вывод конфигурации
         visualizer.display_config()
         
-        print("\n✓ Все параметры успешно валидированы")
+        # Этап 2: Вывод прямых зависимостей
+        visualizer.display_direct_dependencies()
+        
+        print("\n✓ Анализ завершен успешно")
         
     except KeyboardInterrupt:
         print("\n\nПрервано пользователем", file=sys.stderr)
