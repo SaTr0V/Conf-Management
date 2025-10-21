@@ -193,9 +193,3 @@ python dependency_visualizer.py -p org.apache.commons:commons-lang3 -v 3.12.0 -r
 - **Поддержка Maven namespace**: Корректная обработка XML с namespace `http://maven.apache.org/POM/4.0.0`
 - **Обработка ошибок**: Понятные сообщения при проблемах с сетью или некорректных данных
 - **Фильтрация зависимостей**: Исключаются зависимости со scope=test и optional=true
-
----
-
-## Лицензия
-
-Учебный проект
