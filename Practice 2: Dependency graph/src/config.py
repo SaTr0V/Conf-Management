@@ -1,31 +1,22 @@
-"""
-Модуль для работы с конфигурацией приложения.
-Обрабатывает параметры командной строки и валидацию.
-"""
-
 import argparse
 import sys
 from typing import Optional, Dict, Any
 
 
 class Config:
-    """Класс для хранения и валидации конфигурации приложения."""
+    """Класс для хранения и валидации конфигурации приложения"""
     
     def __init__(self):
-        self.package_name: Optional[str] = None
-        self.repo_url: Optional[str] = None
-        self.test_mode: bool = False
-        self.version: Optional[str] = None
-        self.output_file: str = "dependency_graph.svg"
-        self.max_depth: Optional[int] = None
+        self.package_name: Optional[str] = None         # имя пакета
+        self.repo_url: Optional[str] = None             # url
+        self.test_mode: bool = False                    # флаг тестового режима
+        self.version: Optional[str] = None              # версия
+        self.output_file: str = "dependency_graph.svg"  # итоговый файл с графом зависимостей (необходимо для будущего этапа)
+        self.max_depth: Optional[int] = None            # максимальная глубина зависимостей
     
     def validate(self) -> None:
-        """
-        Валидация параметров конфигурации.
+        """Валидация параметров конфигурации"""
         
-        Raises:
-            ValueError: Если параметры невалидны
-        """
         if not self.package_name:
             raise ValueError("Имя пакета обязательно для указания")
         
@@ -43,18 +34,19 @@ class Config:
             raise ValueError(f"Некорректное имя файла: {self.output_file}")
     
     def _is_valid_version(self, version: str) -> bool:
-        """Проверяет корректность формата версии."""
-        # Базовая проверка - версия не должна быть пустой и содержать только допустимые символы
+        """Проверяет корректность формата версии"""
+        
         if not version or not isinstance(version, str):
             return False
         
-        # Допустимы цифры, точки, дефисы для snapshot версий
         import re
-        pattern = r'^[a-zA-Z0-9._-]+$'
+        pattern = r'^[a-zA-Z0-9._-]+$'  # допустимы цифры, точки, дефисы для snapshot версий
+        
         return bool(re.match(pattern, version))
     
     def _is_valid_filename(self, filename: str) -> bool:
-        """Проверяет корректность имени файла."""
+        """Проверяет корректность имени файла"""
+        
         if not filename or not isinstance(filename, str):
             return False
         
@@ -63,7 +55,8 @@ class Config:
         return not any(char in filename for char in forbidden_chars)
     
     def to_dict(self) -> Dict[str, Any]:
-        """Возвращает конфигурацию в виде словаря для вывода."""
+        """Возвращает конфигурацию в виде словаря для вывода"""
+        
         return {
             'package_name': self.package_name,
             'repo_url': self.repo_url,
@@ -75,15 +68,8 @@ class Config:
 
 
 def parse_arguments() -> Config:
-    """
-    Парсит аргументы командной строки и возвращает объект Config.
+    """Парсит аргументы командной строки и возвращает объект Config"""
     
-    Returns:
-        Config: Объект с настройками конфигурации
-        
-    Raises:
-        SystemExit: При ошибке парсинга аргументов
-    """
     parser = argparse.ArgumentParser(
         description='Инструмент визуализации графа зависимостей для Maven пакетов',
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -93,14 +79,14 @@ def parse_arguments() -> Config:
     parser.add_argument(
         '--package', '-p',
         type=str,
-        required=True,
+        required=True,  # обязательный параметр
         help='Имя анализируемого пакета (например: com.example:my-package)'
     )
     
     parser.add_argument(
         '--repo', '-r',
         type=str,
-        required=True,
+        required=True,  # обязательный параметр
         help='URL репозитория Maven или путь к файлу тестового репозитория'
     )
     
