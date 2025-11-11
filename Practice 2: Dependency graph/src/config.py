@@ -34,7 +34,7 @@ class Config:
             raise ValueError(f"Некорректное имя файла: {self.output_file}")
     
     def _is_valid_version(self, version: str) -> bool:
-        """Проверяет корректность формата версии"""
+        """Проверка корректности формата версии"""
         
         if not version or not isinstance(version, str):
             return False
@@ -45,7 +45,7 @@ class Config:
         return bool(re.match(pattern, version))
     
     def _is_valid_filename(self, filename: str) -> bool:
-        """Проверяет корректность имени файла"""
+        """Проверка корректности имени файла"""
         
         if not filename or not isinstance(filename, str):
             return False
@@ -55,7 +55,7 @@ class Config:
         return not any(char in filename for char in forbidden_chars)
     
     def to_dict(self) -> Dict[str, Any]:
-        """Возвращает конфигурацию в виде словаря для вывода"""
+        """Получение конфигурации в виде словаря для вывода"""
         
         return {
             'package_name': self.package_name,
@@ -65,10 +65,15 @@ class Config:
             'output_file': self.output_file,
             'max_depth': self.max_depth if self.max_depth else 'unlimited'
         }
+    
+    def is_test_mode(self) -> bool:
+        """Проверка активации тестового режима"""
+        
+        return self.test_mode
 
 
 def parse_arguments() -> Config:
-    """Парсит аргументы командной строки и возвращает объект Config"""
+    """Парсинг аргументов командной строки и создание объекта класса Config"""
     
     parser = argparse.ArgumentParser(
         description='Инструмент визуализации графа зависимостей для Maven пакетов',
@@ -144,7 +149,8 @@ def parse_arguments() -> Config:
 
 
 def print_config(config: Config) -> None:
-    """Выводит конфигурацию в формате ключ-значение."""
+    """Вывод конфигурации (в формате ключ: значение)"""
+    
     print("Текущая конфигурация:")
     print("-" * 30)
     
