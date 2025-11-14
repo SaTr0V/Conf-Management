@@ -2,14 +2,17 @@
 
 *Инструмент для визуализации графа зависимостей пакетов Maven, а также тестовых пакетов.*
 
-## Текущий статус: Этап 2 - Сбор данных
+## Текущий статус: Этап 3 - Основные операции
 
 ## Функциональность
 - конфигурация через параметры командной строки;
 - валидация входных параметров;
 - вывод настроек в формате ключ-значение;
-- получение прямых зависимостей из Maven репозитория;
-- поддержка формата Maven метаданных.
+- получение прямых зависимостей из Maven-репозитория;
+- построение полного графа зависимостей с помощью BFS;
+- обработка циклических зависимостей;
+- поддержка тестовых репозиториев в txt-файлах;
+- поддержка максимальной глубины анализа.
 
 ## Использование
 ```bash
@@ -90,7 +93,36 @@ max_depth: unlimited
 Всего зависимостей: 2
 
 Зависимости успешно получены.
+
+Построение полного графа зависимостей...
+Максимальная глубина: неограничена
+Предупреждение: не удалось получить зависимости для androidx.core:core-ktx:1.1.0: POM-файл для androidx.core:core-ktx:1.1.0 не найден
+
+Полный граф зависимостей для app.futured.donut:donut:2.1.0:
+------------------------------------------------------------
+└── app.futured.donut:donut:2.1.0
+  └── org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.72
+  └── androidx.core:core-ktx:1.1.0
+    └── org.jetbrains.kotlin:kotlin-stdlib:1.3.72
+    └── org.jetbrains.kotlin:kotlin-test-junit:1.3.72
+      └── org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72
+      └── org.jetbrains:annotations:13.0
+      └── org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.72
+      └── org.jetbrains.kotlin:kotlin-test:1.3.72
+      └── junit:junit:4.12
+        └── org.jetbrains.kotlin:kotlin-test-common:1.3.72
+        └── org.hamcrest:hamcrest-core:1.3
+
+Обнаружены циклические зависимости (2):
+  Цикл 1: org.jetbrains.kotlin:kotlin-test-junit:1.3.72 -> org.jetbrains.kotlin:kotlin-test:1.3.72 -> org.jetbrains.kotlin:kotlin-test-junit:1.3.72
+  Цикл 2: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72 -> org.jetbrains.kotlin:kotlin-test-common:1.3.72 -> org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72
+
+Всего уникальных узлов в графе: 12
+
+Граф зависимостей успешно построен.
 ```
+**Примечание: наличие предупреждений не указывает на ошибку в работе программы. Не все зависимости находятся в Maven-репозитории.**
+
 \
 **Тест 2: обработка ошибок (нет переданного пакета)**
 ```bash
@@ -132,6 +164,8 @@ python src/cli.py -p A -r tests/test_repo.txt -t
 \
 **Вывод**
 ```bash
+(.venv) (base) mac@MacBook-Alexander Practice 2: Dependency graph % python src/cli.py -p A -r tests/test_repo.txt -t
+
 Текущая конфигурация:
 ------------------------------
 package_name: A
@@ -152,4 +186,16 @@ max_depth: unlimited
 Всего зависимостей: 2
 
 Зависимости успешно получены.
+
+Построение полного графа зависимостей...
+Максимальная глубина: неограничена
+Предупреждение: не удалось получить зависимости для A:A:unknown: Пакет A:A не найден в тестовом репозитории
+
+Полный граф зависимостей для A:A:unknown:
+------------------------------------------------------------
+└── A:A:unknown
+
+Всего уникальных узлов в графе: 1
+
+Граф зависимостей успешно построен.
 ```

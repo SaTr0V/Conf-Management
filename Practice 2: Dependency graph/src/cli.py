@@ -1,12 +1,9 @@
 import sys
 import os
-
-# Добавляем родительскую директорию в путь для импорта модулей
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src.config import parse_arguments, print_config
-from src.maven_repository import MavenRepository
-from src.test_repository import TestRepository
+from config import parse_arguments, print_config
+from maven_repository import MavenRepository
+from test_repository import TestRepository
+from dependency_graph import DependencyGraph
 
 
 def get_dependencies(config):
@@ -41,8 +38,21 @@ def print_dependencies(package_name: str, dependencies: list) -> None:
     print("-" * 50)
     print(f"Всего зависимостей: {len(dependencies)}")
 
+
+def build_dependency_graph(config):
+    """Построение полного графа зависимостей"""
+    
+    print(f"\nПостроение полного графа зависимостей...")
+    print(f"Максимальная глубина: {config.max_depth if config.max_depth else 'неограничена'}")
+    
+    graph = DependencyGraph(config.repo_url, config.test_mode)
+    graph.build_graph(config.package_name, config.version, config.max_depth)
+    
+    return graph
+
+
 def main():
-    """Парсинг аргументов, валидиция конфигурации и вывод параметров"""
+    """Парсинг аргументов, валидиция конфигурации и вывод построение графа зависимостей"""
     
     try:
         config = parse_arguments()
@@ -57,6 +67,14 @@ def main():
         print_dependencies(config.package_name, dependencies)
         
         print("\nЗависимости успешно получены.")
+        
+        # Построение полного графа зависимостей
+        graph = build_dependency_graph(config)
+        
+        # Вывод полного графа
+        graph.print_graph(config.package_name, config.version)
+        
+        print("\nГраф зависимостей успешно построен.")
         
     except Exception as e:
         print(f"Критическая ошибка: {e}")
