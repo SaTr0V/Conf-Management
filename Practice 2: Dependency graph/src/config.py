@@ -13,6 +13,7 @@ class Config:
         self.version: Optional[str] = None              # версия
         self.output_file: str = "dependency_graph.svg"  # итоговый файл с графом зависимостей (необходимо для будущего этапа)
         self.max_depth: Optional[int] = None            # максимальная глубина зависимостей
+        self.reverse_package: Optional[str] = None      # обратные зависимости
     
     def validate(self) -> None:
         """Валидация параметров конфигурации"""
@@ -63,7 +64,8 @@ class Config:
             'test_mode': self.test_mode,
             'version': self.version if self.version else 'latest',
             'output_file': self.output_file,
-            'max_depth': self.max_depth if self.max_depth else 'unlimited'
+            'max_depth': self.max_depth if self.max_depth else 'unlimited',
+            'reverse_package': self.reverse_package
         }
     
     def is_test_mode(self) -> bool:
@@ -123,6 +125,13 @@ def parse_arguments() -> Config:
         help='Максимальная глубина анализа зависимостей'
     )
     
+    parser.add_argument(
+        '--reverse', '-R',
+        type=str,
+        default=None,
+        help='Вывести обратные зависимости для указанного пакета (формат group:artifact или простой A)'
+    )
+    
     try:
         args = parser.parse_args()
         
@@ -133,6 +142,7 @@ def parse_arguments() -> Config:
         config.version = args.version
         config.output_file = args.output
         config.max_depth = args.max_depth
+        config.reverse_package = args.reverse
         
         # Валидация конфигурации
         config.validate()

@@ -2,13 +2,14 @@
 
 *Инструмент для визуализации графа зависимостей пакетов Maven, а также тестовых пакетов.*
 
-## Текущий статус: Этап 3 - Основные операции
+## Текущий статус: Этап 4 - Дополнительные операции
 
 ## Функциональность
 - конфигурация через параметры командной строки;
 - валидация входных параметров;
 - вывод настроек в формате ключ-значение;
 - получение прямых зависимостей из Maven-репозитория;
+- вывод обратных зависимостей пакета;
 - построение полного графа зависимостей с помощью BFS;
 - обработка циклических зависимостей;
 - поддержка тестовых репозиториев в txt-файлах;
@@ -39,12 +40,13 @@ python src/cli.py --package org.apache.commons:commons-lang3 --repo https://repo
 ## Доступные параметры
  Параметр | Описание |
 |:----------:|:----------:|
-| `--package / -p`    | `Имя анализируемого пакета (обязательный)`  |
-| `--repo / -r`    | `URL репозитория или путь к файлу тестового репозитория (обязательный)`   |
+| `--package / -p` `имя_пакета`    | `Имя анализируемого пакета (обязательный)`  |
+| `--repo / -r` `ссылка_на_репозиторий`    | `URL репозитория или путь к файлу тестового репозитория (обязательный)`   |
 | `--test-mode / -t`   | `Режим работы с тестовым репозиторием`   |
-| `--version / -v` | `Версия пакета` |
-| `--output / -o` | `Имя сгенерированного файла с изображением графа ()` |
-| `--max-depth / -d` | `Максимальная глубина анализа зависимостей` |
+| `--version / -v` `номер_версии` | `Версия пакета` |
+| `--output / -o` `название_файла` | `Имя сгенерированного файла с изображением графа ()` |
+| `--max-depth / -d` `количество_уровней` | `Максимальная глубина анализа зависимостей` |
+| `--reverse / -R` `имя_пакета` | `Вывод графа обратных зависимостей` |
 
 ## Примеры запуска
 
@@ -68,7 +70,7 @@ python src/cli.py -p com.example:lib -r /path/to/repo -v 1.0.0 -o graph.svg -d 3
 
 **Тест 1: получение зависимостей реального пакета**
 ```bash
-python src/cli.py -p app.futured.donut:donut -r https://repo.maven.apache.org/maven2/ -v 2.1.0
+python src/cli.py -p app.futured.donut:donut -r https://repo.maven.apache.org/maven2 -v 2.1.0 -R org.jetbrains.kotlin:kotlin-stdlib
 ```
 
 **Вывод**
@@ -76,11 +78,12 @@ python src/cli.py -p app.futured.donut:donut -r https://repo.maven.apache.org/ma
 Текущая конфигурация:
 ------------------------------
 package_name: app.futured.donut:donut
-repo_url: https://repo.maven.apache.org/maven2/
+repo_url: https://repo.maven.apache.org/maven2
 test_mode: False
 version: 2.1.0
 output_file: dependency_graph.svg
 max_depth: unlimited
+reverse_package: org.jetbrains.kotlin:kotlin-stdlib
 ------------------------------
 
 Получение зависимостей для пакета app.futured.donut:donut...
@@ -100,24 +103,39 @@ max_depth: unlimited
 
 Полный граф зависимостей для app.futured.donut:donut:2.1.0:
 ------------------------------------------------------------
-└── app.futured.donut:donut:2.1.0
-  └── org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.72
-  └── androidx.core:core-ktx:1.1.0
-    └── org.jetbrains.kotlin:kotlin-stdlib:1.3.72
-    └── org.jetbrains.kotlin:kotlin-test-junit:1.3.72
-      └── org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72
-      └── org.jetbrains:annotations:13.0
-      └── org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.72
-      └── org.jetbrains.kotlin:kotlin-test:1.3.72
-      └── junit:junit:4.12
-        └── org.jetbrains.kotlin:kotlin-test-common:1.3.72
-        └── org.hamcrest:hamcrest-core:1.3
+app.futured.donut:donut:2.1.0
+   org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.72
+      org.jetbrains.kotlin:kotlin-stdlib:1.3.72
+         org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72
+            org.jetbrains.kotlin:kotlin-test-common:1.3.72
+               ↳ org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72  (повтор)
+               org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.72
+                  ↳ org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72  (повтор)
+                  ↳ org.jetbrains.kotlin:kotlin-test-common:1.3.72  (повтор)
+            ↳ org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.72  (повтор)
+         org.jetbrains:annotations:13.0
+         org.jetbrains.kotlin:kotlin-test-junit:1.3.72
+            ↳ org.jetbrains.kotlin:kotlin-test-annotations-common:1.3.72  (повтор)
+            org.jetbrains.kotlin:kotlin-test:1.3.72
+               ↳ org.jetbrains.kotlin:kotlin-test-common:1.3.72  (повтор)
+               ↳ org.jetbrains.kotlin:kotlin-stdlib:1.3.72  (повтор)
+               ↳ org.jetbrains.kotlin:kotlin-test-junit:1.3.72  (повтор)
+               junit:junit:4.12
+                  org.hamcrest:hamcrest-core:1.3
+            ↳ junit:junit:4.12  (повтор)
+      ↳ org.jetbrains.kotlin:kotlin-test-junit:1.3.72  (повтор)
+   androidx.core:core-ktx:1.1.0
+------------------------------------------------------------
+Всего узлов: 12
 
-Обнаружены циклические зависимости (2):
-  Цикл 1: org.jetbrains.kotlin:kotlin-test-junit:1.3.72 -> org.jetbrains.kotlin:kotlin-test:1.3.72 -> org.jetbrains.kotlin:kotlin-test-junit:1.3.72
-  Цикл 2: org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72 -> org.jetbrains.kotlin:kotlin-test-common:1.3.72 -> org.jetbrains.kotlin:kotlin-stdlib-common:1.3.72
-
-Всего уникальных узлов в графе: 12
+Обратные зависимости (кто зависит от org.jetbrains.kotlin:kotlin-stdlib:2.1.0):
+------------------------------------------------------------
+ 1. app.futured.donut:donut:2.1.0
+ 2. org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.72
+ 3. org.jetbrains.kotlin:kotlin-test-junit:1.3.72
+ 4. org.jetbrains.kotlin:kotlin-test:1.3.72
+------------------------------------------------------------
+Всего обратных зависимостей: 4
 
 Граф зависимостей успешно построен.
 ```
@@ -150,6 +168,7 @@ test_mode: False
 version: 1.0
 output_file: dependency_graph.svg
 max_depth: unlimited
+reverse_package: None
 ------------------------------
 
 Получение зависимостей для пакета non.existent:package...
@@ -158,14 +177,12 @@ max_depth: unlimited
 
 **Тест 4: тестовый репозиторий**
 ```bash
-python src/cli.py -p A -r tests/test_repo.txt -t
+python src/cli.py -p A -r tests/test_repo.txt -t --reverse B
 ```
 
 \
 **Вывод**
 ```bash
-(.venv) (base) mac@MacBook-Alexander Practice 2: Dependency graph % python src/cli.py -p A -r tests/test_repo.txt -t
-
 Текущая конфигурация:
 ------------------------------
 package_name: A
@@ -174,6 +191,7 @@ test_mode: True
 version: latest
 output_file: dependency_graph.svg
 max_depth: unlimited
+reverse_package: B
 ------------------------------
 
 Получение зависимостей для пакета A...
@@ -189,13 +207,35 @@ max_depth: unlimited
 
 Построение полного графа зависимостей...
 Максимальная глубина: неограничена
-Предупреждение: не удалось получить зависимости для A:A:unknown: Пакет A:A не найден в тестовом репозитории
 
-Полный граф зависимостей для A:A:unknown:
+Полный граф зависимостей для A:latest:
 ------------------------------------------------------------
-└── A:A:unknown
+A:A:unknown
+   B:B:1.0.0
+      D:D:1.0.0
+         H:H:1.0.0
+            A:A:1.0.0
+               ↳ B:B:1.0.0  (повтор)
+               C:C:1.0.0
+                  F:F:1.0.0
+                     ↳ B:B:1.0.0  (повтор)
+                     G:G:1.0.0
+                  ↳ G:G:1.0.0  (повтор)
+      E:E:1.0.0
+   ↳ C:C:1.0.0  (повтор)
+------------------------------------------------------------
+Всего узлов: 9
 
-Всего уникальных узлов в графе: 1
+Обратные зависимости (кто зависит от B):
+------------------------------------------------------------
+ 1. A:A:1.0.0
+ 2. A:A:unknown
+ 3. C:C:1.0.0
+ 4. D:D:1.0.0
+ 5. F:F:1.0.0
+ 6. H:H:1.0.0
+------------------------------------------------------------
+Всего обратных зависимостей: 6
 
 Граф зависимостей успешно построен.
 ```

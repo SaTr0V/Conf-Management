@@ -74,6 +74,10 @@ def main():
         # Вывод полного графа
         graph.print_graph(config.package_name, config.version)
         
+        # Если указан режим обратных зависимостей — выводим
+        if getattr(config, "reverse_package", None):
+            graph.print_reverse_dependencies(config.reverse_package, config.version, config.max_depth)
+        
         print("\nГраф зависимостей успешно построен.")
         
     except Exception as e:
