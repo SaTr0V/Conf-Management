@@ -4,6 +4,7 @@ import sys
 import os
 from maven_repository import MavenRepository
 from test_repository import TestRepository
+import graphviz
 
 
 def make_node_id(group: str, artifact: str, version: Optional[str]) -> str:
@@ -251,3 +252,24 @@ class DependencyGraph:
             print(f"{i:2d}. {display}")
         print("-" * 60)
         print(f"Всего обратных зависимостей: {len(rev_nodes)}")
+
+    def to_dot(self) -> str:
+        """Сформировать текст Graphviz (DOT) для всего графа"""
+        
+        lines = ["digraph G {"]
+        for parent, children in self.graph.items():
+            parent_label = f'"{parent}"'
+            for child in children:
+                child_label = f'"{child}"'
+                lines.append(f"    {parent_label} -> {child_label};")
+        lines.append("}")
+        return "\n".join(lines)
+
+    def render_graph(self, output_file: str = "dependency_graph.svg") -> None:
+        """Сохранить граф в SVG через Graphviz"""
+        
+        dot_str = self.to_dot()
+        g = graphviz.Source(dot_str)
+        g.format = 'svg'
+        g.render(filename=output_file, cleanup=True)
+        print(f"\nГраф зависимостей сохранён в {output_file}")
