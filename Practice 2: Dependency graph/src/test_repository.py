@@ -46,15 +46,32 @@ class TestRepository:
         return dependencies
     
     def get_dependencies(self, package_name: str, version: Optional[str] = None) -> List[Tuple[str, str, str]]:
-        """Получение зависимостей пакета"""
+        """Получение зависимостей пакета
+           Поддерживается поиск как по 'A' так и по 'A:A' (совместимость с форматом group:artifact)"""
         
-        if package_name not in self.dependencies:
+        # Если ключ есть прямо — используем
+        if package_name in self.dependencies:
+            key = package_name
+        else:
+            # Попробуем разбить group:artifact и искать по простой форме (A)
+            if ':' in package_name:
+                left = package_name.split(':', 1)[0]
+                if left in self.dependencies:
+                    key = left
+                else:
+                    # Также попробуем artifact (в случае form A:A)
+                    right = package_name.split(':', 1)[1]
+                    key = right if right in self.dependencies else None
+            else:
+                key = None
+
+        if not key or key not in self.dependencies:
             raise ValueError(f"Пакет {package_name} не найден в тестовом репозитории")
         
-        # Преобразуем формат для совместимости с MavenClient
+        # Преобразуем формат для совместимости с MavenClient (group, artifact, version)
         result = []
-        for dep_name, dep_version in self.dependencies[package_name]:
-            # В тестовом репозитории имена пакетов используются как group_id:artifact_id
+        for dep_name, dep_version in self.dependencies[key]:
+            # В тестовом репозитории имена пакетов используются как простые токены — используем их как group и artifact
             result.append((dep_name, dep_name, dep_version))
         
         return result
