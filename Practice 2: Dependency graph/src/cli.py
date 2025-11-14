@@ -4,6 +4,7 @@ from config import parse_arguments, print_config
 from maven_repository import MavenRepository
 from test_repository import TestRepository
 from dependency_graph import DependencyGraph
+from visualizer import GraphvizExporter
 
 
 def get_dependencies(config):
@@ -70,6 +71,10 @@ def main():
         
         # Построение полного графа зависимостей
         graph = build_dependency_graph(config)
+        
+        # Визуализация, если выбран флаг
+        if getattr(config, "generate_graph", False):
+            graph.render_graph(config.output_file)
         
         # Вывод полного графа
         graph.print_graph(config.package_name, config.version)

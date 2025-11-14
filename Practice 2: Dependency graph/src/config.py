@@ -14,6 +14,7 @@ class Config:
         self.output_file: str = "dependency_graph.svg"  # итоговый файл с графом зависимостей (необходимо для будущего этапа)
         self.max_depth: Optional[int] = None            # максимальная глубина зависимостей
         self.reverse_package: Optional[str] = None      # обратные зависимости
+        self.generate_graph: bool = False               # визуализация графа
     
     def validate(self) -> None:
         """Валидация параметров конфигурации"""
@@ -63,7 +64,8 @@ class Config:
             'repo_url': self.repo_url,
             'test_mode': self.test_mode,
             'version': self.version if self.version else 'latest',
-            'output_file': self.output_file,
+            'generate_graph': self.generate_graph,
+            'output_file': f"{self.output_file}.svg",
             'max_depth': self.max_depth if self.max_depth else 'unlimited',
             'reverse_package': self.reverse_package
         }
@@ -114,7 +116,7 @@ def parse_arguments() -> Config:
     parser.add_argument(
         '--output', '-o',
         type=str,
-        default='dependency_graph.svg',
+        default='dependency_graph',
         help='Имя сгенерированного файла с изображением графа (по умолчанию: dependency_graph.svg)'
     )
     
@@ -132,6 +134,13 @@ def parse_arguments() -> Config:
         help='Вывести обратные зависимости для указанного пакета (формат group:artifact или простой A)'
     )
     
+    parser.add_argument(
+        '--graph', '-g',
+        action='store_true',
+        help='Сгенерировать граф зависимостей в формате SVG'
+    )
+
+    
     try:
         args = parser.parse_args()
         
@@ -143,6 +152,7 @@ def parse_arguments() -> Config:
         config.output_file = args.output
         config.max_depth = args.max_depth
         config.reverse_package = args.reverse
+        config.generate_graph = args.graph
         
         # Валидация конфигурации
         config.validate()
